@@ -68,6 +68,8 @@ public class OpcUaClientFactory {
         );
     }
 
+
+
     private static void checkSecurityTmpDir() throws Exception {
         Path securityTempDir = Paths.get(System.getProperty("java.io.tmpdir"), "security");
         Files.createDirectories(securityTempDir);
