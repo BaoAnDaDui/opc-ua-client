@@ -45,8 +45,7 @@ public class OpcUaOperationSupport {
      * @param client opc ua client
      * @param uaNode 节点
      */
-    public  List<UaNode> browseNode(OpcUaClient client, UaNode uaNode) throws Exception {
-        List<UaNode> uaNodes = new ArrayList<>();
+    public  List<UaNode> browseNode(OpcUaClient client, UaNode uaNode,List<UaNode> resultList) throws Exception {
         List<? extends UaNode> nodes;
         if (uaNode == null) {
             nodes = client.getAddressSpace().browseNodes(Identifiers.ObjectsFolder);
@@ -58,10 +57,10 @@ public class OpcUaOperationSupport {
                 continue;
             }
             logger.info("Node is: [{}]",nd);
-            uaNodes.add(nd);
-            browseNode(client, nd);
+            resultList.add(nd);
+            browseNode(client, nd,resultList);
         }
-        return uaNodes;
+        return resultList;
     }
 
     /**
@@ -88,7 +87,7 @@ public class OpcUaOperationSupport {
      */
     public   boolean writeNodeValue(OpcUaClient client,int nameSpaceInx, String identifier,Object value) {
         NodeId nodeId = new NodeId(nameSpaceInx, identifier);
-        DataValue nowValue = new DataValue(new Variant(value), StatusCode.GOOD, DateTime.now());
+        DataValue nowValue = new DataValue(new Variant(value), null, null);
         StatusCode statusCode = client.writeValue(nodeId, nowValue).join();
         return statusCode.isGood();
     }
@@ -98,7 +97,7 @@ public class OpcUaOperationSupport {
      * 订阅(单个)
      *
      */
-    public static void subscribe(OpcUaClient client, int nameSpaceInx, String identifier, double timeInterval, UaMonitoredItem.ValueConsumer consumer) throws Exception {
+    public  void subscribe(OpcUaClient client, int nameSpaceInx, String identifier, double timeInterval, UaMonitoredItem.ValueConsumer consumer) throws Exception {
 
         client
                 .getSubscriptionManager()
@@ -122,7 +121,7 @@ public class OpcUaOperationSupport {
 
 
 
-    private static void handlerNode(OpcUaClient client, int nameSpaceInx, Consumer<DataValue> consumer,String ...keys) {
+    private  void handlerNode(OpcUaClient client, int nameSpaceInx, Consumer<DataValue> consumer,String ...keys) {
         try {
             ManagedSubscription subscription = ManagedSubscription.create(client);
             List<NodeId> nodeIdList = new ArrayList<>();
@@ -140,7 +139,7 @@ public class OpcUaOperationSupport {
 
 
 
-    private static void managedSubscriptionEvent(OpcUaClient client,int nameSpaceInx, Consumer<DataValue> consumer,String ...key) {
+    private  void managedSubscriptionEvent(OpcUaClient client,int nameSpaceInx, Consumer<DataValue> consumer,String ...key) {
         final CountDownLatch eventLatch = new CountDownLatch(1);
         client.getSubscriptionManager().addSubscriptionListener(new CustomSubscriptionListener(client,nameSpaceInx,key,consumer));
         handlerNode(client,nameSpaceInx,consumer,key);
@@ -156,7 +155,7 @@ public class OpcUaOperationSupport {
     /**
      * 自定义订阅监听
      */
-    private static class CustomSubscriptionListener implements UaSubscriptionManager.SubscriptionListener {
+    private  class CustomSubscriptionListener implements UaSubscriptionManager.SubscriptionListener {
 
         private final OpcUaClient client;
 
